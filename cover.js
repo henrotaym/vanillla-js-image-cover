@@ -5,14 +5,13 @@
 
 class Cover
 {
-    constructor({ id, template = null, coordinates = false }) 
+    constructor({ container, template = "", coordinates = false }) 
     {
         // Storing options
-        this.id = id;
         this.template = template;
         this.coordinates = coordinates;
         // Setting up container element
-        this.setImageContainer();
+        this.setImageContainer(container);
         // Points will be stored here
         this.points = [];
     }
@@ -28,7 +27,6 @@ class Cover
     // Adding specified point to handler
     addPoint(point)
     {
-        console.log(this.getPointStyle(point));
         // Adding elmement
         this.appendPointTemplate(point)
             .setPointStyle(point)
@@ -79,10 +77,10 @@ class Cover
 
 
     // Setting related image container
-    async setImageContainer()
+    async setImageContainer(id)
     {
         // Setting container
-        this.container = document.getElementById(this.id)
+        this.container = document.getElementById(id)
 
         // Retrieving image
         this.image = this.container.querySelector('img');
@@ -91,7 +89,7 @@ class Cover
         // Firing ready callback
         this.ready(this);
 
-        if (this.coordinates) image.addEventListener('click', this.getRelativeCoordinates.bind(this));
+        if (this.coordinates) this.image.addEventListener('click', this.getRelativeCoordinates.bind(this));
     }
 
     getRelativeCoordinates({ x, y })
@@ -144,7 +142,7 @@ const points = [
 // Creating cover class with image container id
 const cover = new Cover({
     template,
-    id: "image-container",
+    container: "image-container",
     coordinates: true
 });
 // When cover is ready add points.
