@@ -5,11 +5,11 @@
 
 class Cover
 {
-    constructor({ container, template = "", coordinates = false }) 
+    constructor({ container, template = "", debug = false }) 
     {
         // Storing options
         this.template = template;
-        this.coordinates = coordinates;
+        this.debug = debug;
         // Setting up container element
         this.setImageContainer(container);
         // Points will be stored here
@@ -27,6 +27,7 @@ class Cover
     // Adding specified point to handler
     addPoint(point)
     {
+        point.listeners = point.listeners || [];
         // Adding elmement
         this.appendPointTemplate(point)
             .setPointStyle(point)
@@ -35,21 +36,49 @@ class Cover
         this.points.push(point);
     }
 
+    deletePoint({ left, top })
+    {
+        const index = this.points.findIndex(p => p.top === top && p.left === left);
+        const point = this.points[index];
+        point.listeners.forEach(({ type, callback }) => point.element.removeEventListener(type, callback))
+        point.element.remove();
+        this.points.splice(index, 1);
+        this.showPointsDetails();
+    }
+
     appendPointTemplate(point)
     {
         const element = document.createElement('div');
         element.innerHTML = this.getPointTemplate(point);
-        if (point.listeners) {
-            point.listeners.forEach(({ type, callback }) => element.addEventListener(type, callback))
-        }
         point.element = this.container.appendChild(element);
+        this.addPointListeners(point)
 
         return this;
     }
 
+    addPointListeners(point)
+    {
+        if (this.debug && !point.listeners.find(l => l.debug)) this.addDebugListener(point);
+        
+        point.listeners.forEach(({ type, callback }) => point.element.addEventListener(type, callback));
+    }
+
+    addDebugListener(point)
+    {
+        point.listeners.push({
+            type: "contextmenu",
+            callback: (e) => { 
+                e.preventDefault();
+                this.deletePoint(point); 
+            },
+            debug: true
+        })
+    }
+
     getPointTemplate(point)
     {
-        const { template } = point;
+        const { template = {} } = point;
+
         if (typeof template === "string") {
             return template;
         }
@@ -89,19 +118,29 @@ class Cover
         // Firing ready callback
         this.ready(this);
 
-        if (this.coordinates) this.image.addEventListener('click', this.getRelativeCoordinates.bind(this));
+        if (this.debug) this.image.addEventListener('click', this.addPointFromClick.bind(this));
     }
 
-    getRelativeCoordinates({ x, y })
+    addPointFromClick({ x, y })
     {
         const { clientWidth: container_width, clientHeight: container_height } = this.container
         const { top, left } = this.image.getBoundingClientRect();
         const width = x - left;
         const height = y - top;
-        console.log({ 
+        const point = { 
             left: Math.round(width * 100 / container_width) / 100,
             top: Math.round(height * 100 / container_height) / 100,
-        })
+            listeners: [],
+            template: {}
+        };
+        this.addDebugListener(point)
+        this.addPoint(point);
+        this.showPointsDetails();
+    }
+
+    showPointsDetails()
+    {
+        console.log(this.points.map(({ element, ...point }) => ({ ...point, listeners: point.listeners?.filter(l => !l.debug) || [] })));
     }
 }
 
@@ -123,27 +162,80 @@ const template = `
 
 const points = [
     {
-        left: 0.30,
-        top: 0.30,
-        template: { text: "Panneaux photovoltaïques", link: "panneaux" }, 
+        "left": 0.22,
+        "top": 0.37,
+        "listeners": [],
+        "template": {
+            "text": "testastos"
+        }
     },
     {
-        left: 0.50,
-        top: 0.70,
-        template: { text: "Eclairage", link: "eclairage" }, 
+        "left": 0.4,
+        "top": 0.47,
+        "listeners": [],
+        "template": {}
     },
     {
-        left: 0.63,
-        top: 0.23,
-        template: { text: "Parachèvement", link: "parachevement" },
+        "left": 0.11,
+        "top": 0.57,
+        "listeners": [],
+        "template": {}
     },
-];
+    {
+        "left": 0.3,
+        "top": 0.76,
+        "listeners": [],
+        "template": {}
+    },
+    {
+        "left": 0.58,
+        "top": 0.37,
+        "listeners": [],
+        "template": {}
+    },
+    {
+        "left": 0.55,
+        "top": 0.65,
+        "listeners": [],
+        "template": {}
+    },
+    {
+        "left": 0.78,
+        "top": 0.55,
+        "listeners": [],
+        "template": {}
+    },
+    {
+        "left": 0.69,
+        "top": 0.27,
+        "listeners": [],
+        "template": {}
+    },
+    {
+        "left": 0.19,
+        "top": 0.75,
+        "listeners": [],
+        "template": {}
+    },
+    {
+        "left": 0.73,
+        "top": 0.72,
+        "listeners": [],
+        "template": {}
+    },
+    {
+        "left": 0.72,
+        "top": 0.51,
+        "listeners": [],
+        "template": {}
+    }
+]
 
 // Creating cover class with image container id
 const cover = new Cover({
     template,
     container: "image-container",
-    coordinates: true
+    debug: true
 });
 // When cover is ready add points.
 cover.ready = () => {
